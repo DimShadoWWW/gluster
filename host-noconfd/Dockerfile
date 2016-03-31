@@ -9,10 +9,9 @@ RUN yum --setopt=tsflags=nodocs -y update && \
     rm epel-release-7-5.noarch.rpm && \
     yum --setopt=tsflags=nodocs -y install glusterfs-server && \
     yum clean all && \
-    systemctl enable rpcbind.service
+    systemctl enable rpcbind.service && \
+    systemctl enable glusterd.service
 
-EXPOSE 22 111 245 443 24007 2049 8080 6010 6011 6012 38465 38466 38468 38469 49152 49153 49154 49156 49157 49158 49159 49160 49161 49162 49163
+EXPOSE 111 24007 49152 49153
 
-COPY docker-entrypoint.sh /
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["glusterd"]
+CMD ["/usr/sbin/init"]
