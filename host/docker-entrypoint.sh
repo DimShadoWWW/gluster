@@ -18,14 +18,17 @@ until confd -backend etcd -node $ETCD_ADDRESS -onetime -prefix /services/gluster
 done
 echo "Getting list of machines in etcd for /services/gluster/$GLUSTER_VOLUME_NAME"
 GLUSTER_MACHINES=$(curl -L http://$ETCD_ADDRESS:2379/v2/keys/services/gluster/$GLUSTER_VOLUME_NAME/machines 2> /dev/null | python -c 'import json,sys;obj=json.load(sys.stdin);print " ".join(map(lambda x: x["key"].split("/")[-1], obj["node"]["nodes"]))')
+echo "Starting glusterd service"
+/usr/sbin/glusterd -p /var/run/glusterd.pid
 
-CREATE_GLUSTER_VOLUME=true
+GLUSTER_MACHINES_STORAGE="$HOSTNAME:$GLUSTER_LOCATION"
 
 for GLUSTER_MACHINE in "${GLUSTER_MACHINES[@]}"; do
 	if [ "$GLUSTER_MACHINE" -ne "$HOSTNAME" ]; then
 		# For each host apart from this one
 		echo "Running gluster peer probe for $GLUSTER_MACHINE"
 		[ gluster peer probe $GLUSTER_MACHINE ] || echo "Could not contact $GLUSTER_MACHINE" && CREATE_GLUSTER_VOLUME=false
+    GLUSTER_MACHINES_STORAGE="$GLUSTER_MACHINES_STORAGE $GLUSTER_MACHINE:$(curl -L http://$ETCD_ADDRESS:2379/v2/keys/services/gluster/$GLUSTER_VOLUME_NAME/storage/$GLUSTER_MACHINE 2> /dev/null | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["node"]["value"]))')"
 	fi
 done
 
@@ -36,7 +39,10 @@ fi
 
 if [ $CREATE_GLUSTER_VOLUME = true ]; then
 	if gluster volume list |& grep "No volumes present in cluster" > /dev/null; then
-
+    echo "Creating gluster volume $GLUSTER_VOLUME_NAME"
+    gluster volume create $GLUSTER_VOLUME_NAME transport tcp replica $GLUSTER_REPLICATION $GLUSTER_MACHINES_STORAGE
+    echo "Starting gluster volume $GLUSTER_VOLUME_NAME"
+    gluster volume start $GLUSTER_VOLUME_NAME
 	fi
 fi
 
@@ -46,7 +52,7 @@ fi
 
 if [ "$1" = 'confd' ]; then
 	shift
-	set -- confd -node "$ETCD_ADDRESS" "$@"
+	set -- confd -backend etcd -watch -node $ETCD_ADDRESS -prefix /services/gluster/$GLUSTER_VOLUME_NAME -config-file /hosts.toml "$@"
   echo "Starting confd with command '$@'"
   exec "$@"
 else
