@@ -12,7 +12,7 @@ RUN yum --setopt=tsflags=nodocs -y update && \
     systemctl enable rpcbind.service && \
     systemctl enable glusterd.service
 
-EXPOSE 111 24007 49152 49153
+EXPOSE 111 24007 49152
 
 ENV GLUSTER_REPLICATION=2 \
     GLUSTER_VOLUME_NAME=gv0 \
