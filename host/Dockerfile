@@ -20,6 +20,8 @@ ENV GLUSTER_REPLICATION=2 \
     GLUSTER_PUBLIC_IP=1.1.1.1 \
     GLUSTER_PRIVATE_IP=1.1.1.1
 
-COPY docker-entrypoint.sh hosts.toml hosts.tmpl /
+COPY docker-entrypoint.sh /
+COPY hosts.toml /etc/confd/conf.d
+COPY hosts.tmpl /etc/confd/templates/
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["confd"]

@@ -1,5 +1,5 @@
 [template]
-src = "/hosts.tmpl"
+src = "hosts.tmpl"
 dest = "/etc/hosts"
 keys = [ "/machines" ]
 owner = "root"

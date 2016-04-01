@@ -12,7 +12,7 @@ curl -L http://$ETCD_ADDRESS:2379/v2/keys/services/gluster/$GLUSTER_VOLUME_NAME/
 echo "Setting etcd key /services/gluster/$GLUSTER_VOLUME_NAME/storage/$HOSTNAME to $GLUSTER_LOCATION"
 curl -L http://$ETCD_ADDRESS:2379/v2/keys/services/gluster/$GLUSTER_VOLUME_NAME/storage/$HOSTNAME -XPUT -d value="$GLUSTER_LOCATION" 2> /dev/null
 echo "Setting up hosts file for first time"
-until confd -backend etcd -node $ETCD_ADDRESS -onetime -prefix /services/gluster/$GLUSTER_VOLUME_NAME -config-file /hosts.toml; do
+until confd -backend etcd -onetime -node $ETCD_ADDRESS:2379 -prefix /services/gluster/$GLUSTER_VOLUME_NAME; do
     echo "Waiting for confd to create initial hosts file"
     sleep 2
 done
@@ -52,7 +52,7 @@ fi
 
 if [ "$1" = 'confd' ]; then
 	shift
-	set -- confd -backend etcd -watch -node $ETCD_ADDRESS -prefix /services/gluster/$GLUSTER_VOLUME_NAME -config-file /hosts.toml "$@"
+	set -- confd -backend etcd -watch -node $ETCD_ADDRESS:2379 -prefix /services/gluster/$GLUSTER_VOLUME_NAME "$@"
   echo "Starting confd with command '$@'"
   exec "$@"
 else
