@@ -12,6 +12,6 @@ RUN yum --setopt=tsflags=nodocs -y update && \
     systemctl enable rpcbind.service && \
     systemctl enable glusterd.service
 
-EXPOSE 111 24007 49152 49153
+EXPOSE 111 111/udp 24007 49152 49153
 
 CMD ["/usr/sbin/init"]
